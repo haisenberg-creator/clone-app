@@ -4,6 +4,7 @@ type RoundResult = {
     rating: "PERFECT" | "GOOD" | "MISS";
     fill: number;
     error: number;
+    duration: number;
 };
 
 type ResultScreenProps = {
@@ -19,6 +20,7 @@ export default function ResultScreen({
 }: ResultScreenProps) {
     const rating = data?.rating ?? "MISS";
     const fill = data ? Math.round(data.fill) : 0;
+    const duration = data ? (data.duration / 1000).toFixed(1) : "0.0";
 
     return (
         <div className="min-h-screen w-full bg-[#F7F1E5] flex items-center justify-center px-6">
@@ -28,6 +30,7 @@ export default function ResultScreen({
 
                 <div className="mt-6 rounded-2xl bg-[#f3e7d3] p-4 text-left text-sm text-[#6a4b34]">
                     <p>Target error: {data ? data.error.toFixed(1) : "0.0"}</p>
+                    <p className="mt-1">Time taken: {duration}s</p>
                     <p className="mt-1">
                         {rating === "PERFECT"
                             ? "You hit the target line."
