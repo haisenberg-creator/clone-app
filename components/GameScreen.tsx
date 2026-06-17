@@ -6,6 +6,7 @@ type RoundResult = {
     rating: "PERFECT" | "GOOD" | "MISS";
     fill: number;
     error: number;
+    duration: number;
 };
 
 type GameScreenProps = {
@@ -17,34 +18,28 @@ type FillState = "LOW" | "PERFECT" | "OVER";
 export default function GameScreen({ onFinish }: GameScreenProps) {
     const target = 75;
     const maxFill = 100;
-    const duration = 5000;
 
     const [fill, setFill] = useState(0);
     const [state, setState] = useState<FillState>("LOW");
-    const [timeLeft, setTimeLeft] = useState(1);
     const [pulse, setPulse] = useState(false);
     const [feedback, setFeedback] = useState("Tap to fill");
+    const [elapsedTime, setElapsedTime] = useState(0);
 
     const lastTap = useRef(0);
     const fillRef = useRef(0);
     const ended = useRef(false);
     const startTime = useRef(Date.now());
+    const inactivityTimer = useRef<any>(null);
 
     useEffect(() => {
         const timer = window.setInterval(() => {
-            if (ended.current) return;
-
-            const elapsed = Date.now() - startTime.current;
-            const remaining = Math.max(0, 1 - elapsed / duration);
-            setTimeLeft(remaining);
-
-            if (remaining <= 0) {
-                endGame();
+            if (!ended.current) {
+                const elapsed = Date.now() - startTime.current;
+                setElapsedTime(elapsed);
             }
         }, 16);
 
         return () => window.clearInterval(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     function getTapPower(interval: number): number {
@@ -90,14 +85,26 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
 
         setPulse(true);
         window.setTimeout(() => setPulse(false), 80);
+
+        if (inactivityTimer.current) {
+            window.clearTimeout(inactivityTimer.current);
+        }
+        inactivityTimer.current = window.setTimeout(() => {
+            endGame();
+        }, 2000);
     }
 
     function endGame() {
         if (ended.current) return;
         ended.current = true;
 
+        if (inactivityTimer.current) {
+            window.clearTimeout(inactivityTimer.current);
+        }
+
         const finalFill = fillRef.current;
         const error = Math.abs(finalFill - target);
+        const duration = Date.now() - startTime.current;
 
         let rating: RoundResult["rating"] = "MISS";
         if (error < 3) rating = "PERFECT";
@@ -107,6 +114,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
             rating,
             fill: finalFill,
             error,
+            duration,
         });
     }
 
@@ -124,13 +132,8 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
             style={{ touchAction: "none" }}
         >
             <div className="w-full max-w-sm">
-                <div className="mb-4 flex items-center gap-2">
-                    <div className="h-3 flex-1 rounded-full bg-black/10 overflow-hidden">
-                        <div
-                            className="h-full rounded-full bg-[#7a542b] transition-[width] duration-75"
-                            style={{ width: `${timeLeft * 100}%` }}
-                        />
-                    </div>
+                <div className="mb-4">
+                    <p className="text-center text-sm text-[#6a4b34]">Time: {(elapsedTime / 1000).toFixed(1)}s</p>
                 </div>
 
                 <div className="mb-4 text-center">
