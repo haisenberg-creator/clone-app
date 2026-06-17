@@ -89,6 +89,13 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
         if (inactivityTimer.current) {
             window.clearTimeout(inactivityTimer.current);
         }
+
+        // End game immediately when water touches the water line
+        if (nextFill >= target) {
+            endGame();
+            return;
+        }
+
         inactivityTimer.current = window.setTimeout(() => {
             endGame();
         }, 2000);
